@@ -1,12 +1,5 @@
 # installation /build-process
 
-## eccenca/baseimage-docker
-```
-git clone https://github.com/eccenca/baseimage-docker.git
-cd baseimage-docker/image
-docker build -t eccenca/baseimage:latest .
-```
-
 ## eccenca/ckan
 ```
 git clone --recursive https://github.com/eccenca/ckan-docker.git
