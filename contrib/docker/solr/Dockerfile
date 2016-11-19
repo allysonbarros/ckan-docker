@@ -24,7 +24,7 @@ ENV SOLR solr-$SOLR_VERSION
 ENV CKAN_VERSION 2.2.3
 
 RUN mkdir -p /opt/solr
-ADD http://ftp-stud.hs-esslingen.de/pub/Mirrors/ftp.apache.org/dist/lucene/solr/$SOLR_VERSION/$SOLR.tgz /opt/$SOLR.tgz
+ADD https://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/$SOLR.tgz /opt/$SOLR.tgz
 RUN tar zxf /opt/$SOLR.tgz -C /opt/solr --strip-components 1
 
 # Install CKAN Solr core
