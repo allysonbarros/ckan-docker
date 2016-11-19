@@ -5,9 +5,8 @@
 # with scope to ckan
 #
 ####
-FROM eccenca/baseimage:1.1.1
-MAINTAINER Henri Knochenhauer <henri.knochenhauer@eccenca.com>
-MAINTAINER René Pietzsch <rene.pietzsch@eccenca.com>
+FROM phusion/baseimage
+MAINTAINER Allyson Barros <allysonbarrosrn@gmail.com>
 
 # Disable SSH
 RUN rm -rf /etc/service/sshd /etc/my_init.d/00_regen_ssh_host_keys.sh
