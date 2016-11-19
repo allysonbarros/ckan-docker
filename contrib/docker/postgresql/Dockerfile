@@ -5,9 +5,8 @@
 # with scope to ckan
 #
 ####
-FROM eccenca/baseimage:1.0.1
-MAINTAINER Henri Knochenhauer <henri.knochenhauer@eccenca.com>
-MAINTAINER René Pietzsch <rene.pietzsch@eccenca.com>
+FROM phusion/baseimage
+MAINTAINER Allyson Barros <allysonbarrosrn@gmail.com>
 
 #set env
 ENV DEBIAN_FRONTEND noninteractive
