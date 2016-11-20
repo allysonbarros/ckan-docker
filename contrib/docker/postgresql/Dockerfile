@@ -15,11 +15,10 @@ ENV DEBIAN_FRONTEND noninteractive
 RUN locale-gen en_US.UTF-8
 RUN update-locale LANG=en_US.UTF-8
 
-RUN \
-   apt-get -qq update &&  \
-   apt-get install -y postgresql-9.3 postgresql-contrib-9.3 && \
-   apt-get install -y postgresql-9.3-postgis-2.1 libpq-dev sudo && \
-   apt-get install -y python-dev libxml2-dev libxslt1-dev libgeos-c1
+RUN apt-get -qq update && apt-get install -y \
+    postgresql-9.5 postgresql-contrib-9.5 \
+    postgresql-9.5-postgis-2.2 libpq-dev sudo \
+    python-dev libxml2-dev libxslt1-dev libgeos-c1v5
 
 # /etc/ssl/private can't be accessed from within container for some reason
 # (@andrewgodwin says it's something AUFS related)
@@ -30,9 +29,9 @@ RUN mkdir /etc/ssl/private-copy && \
     chmod -R 0700 /etc/ssl/private && \
     chown -R postgres /etc/ssl/private
 
-ADD postgresql.conf /etc/postgresql/9.3/main/postgresql.conf
-ADD pg_hba.conf /etc/postgresql/9.3/main/pg_hba.conf
-RUN chown postgres:postgres /etc/postgresql/9.3/main/*.conf
+ADD postgresql.conf /etc/postgresql/9.5/main/postgresql.conf
+ADD pg_hba.conf /etc/postgresql/9.5/main/pg_hba.conf
+RUN chown postgres:postgres /etc/postgresql/9.5/main/*.conf
 ADD run /usr/local/bin/run
 RUN chmod +x /usr/local/bin/run
 

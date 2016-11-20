@@ -19,7 +19,7 @@ RUN apt-get -q -y update && \
 ENV SOLR_HOME /opt/solr/example/solr
 ENV SOLR_VERSION 4.10.4
 ENV SOLR solr-$SOLR_VERSION
-ENV CKAN_VERSION 2.2.3
+ENV CKAN_VERSION 2.6.0
 
 RUN mkdir -p /opt/solr
 ADD https://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/$SOLR.tgz /opt/$SOLR.tgz

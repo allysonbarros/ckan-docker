@@ -2,10 +2,10 @@
 set -e
 
 mkdir /etc/ssl/private-copy
-mv /etc/ssl/private/* /etc/ssl/private-copy/ 
-rm -r /etc/ssl/private 
-mv /etc/ssl/private-copy /etc/ssl/private 
-chmod -R 0700 /etc/ssl/private 
+mv /etc/ssl/private/* /etc/ssl/private-copy/
+rm -r /etc/ssl/private
+mv /etc/ssl/private-copy /etc/ssl/private
+chmod -R 0700 /etc/ssl/private
 chown -R postgres /etc/ssl/private
 
 POSTGRESQL_USER=${POSTGRESQL_USER:-"docker"}
@@ -13,16 +13,16 @@ POSTGRESQL_PASS=${POSTGRESQL_PASS:-"docker"}
 POSTGRESQL_DB=${POSTGRESQL_DB:-"docker"}
 POSTGRESQL_TEMPLATE=${POSTGRESQL_TEMPLATE:-"DEFAULT"}
 
-POSTGRESQL_BIN=/usr/lib/postgresql/9.3/bin/postgres
-POSTGRESQL_CONFIG_FILE=/etc/postgresql/9.3/main/postgresql.conf
-POSTGRESQL_DATA=/var/lib/postgresql/9.3/main
+POSTGRESQL_BIN=/usr/lib/postgresql/9.5/bin/postgres
+POSTGRESQL_CONFIG_FILE=/etc/postgresql/9.5/main/postgresql.conf
+POSTGRESQL_DATA=/var/lib/postgresql/9.5/main
 
 POSTGRESQL_SINGLE="sudo -u postgres $POSTGRESQL_BIN --single --config-file=$POSTGRESQL_CONFIG_FILE"
 
 if [ ! -d $POSTGRESQL_DATA ]; then
     mkdir -p $POSTGRESQL_DATA
     chown -R postgres:postgres $POSTGRESQL_DATA
-    sudo -u postgres /usr/lib/postgresql/9.3/bin/initdb -D $POSTGRESQL_DATA -E 'UTF-8'
+    sudo -u postgres /usr/lib/postgresql/9.5/bin/initdb -D $POSTGRESQL_DATA -E 'UTF-8'
     ln -s /etc/ssl/certs/ssl-cert-snakeoil.pem $POSTGRESQL_DATA/server.crt
     ln -s /etc/ssl/private/ssl-cert-snakeoil.key $POSTGRESQL_DATA/server.key
 fi
@@ -32,8 +32,8 @@ $POSTGRESQL_SINGLE <<< "ALTER USER $POSTGRESQL_USER WITH PASSWORD '$POSTGRESQL_P
 $POSTGRESQL_SINGLE <<< "CREATE DATABASE $POSTGRESQL_DB OWNER $POSTGRESQL_USER TEMPLATE $POSTGRESQL_TEMPLATE;" > /dev/null
 
 # preparing for ckanext-spatial
-$POSTGRESQL_SINGLE -j $POSTGRESQL_DB < /usr/share/postgresql/9.3/contrib/postgis-2.1/postgis.sql > /dev/null
-$POSTGRESQL_SINGLE -j $POSTGRESQL_DB < /usr/share/postgresql/9.3/contrib/postgis-2.1/spatial_ref_sys.sql > /dev/null
+$POSTGRESQL_SINGLE -j $POSTGRESQL_DB < /usr/share/postgresql/9.5/contrib/postgis-2.2/postgis.sql > /dev/null
+$POSTGRESQL_SINGLE -j $POSTGRESQL_DB < /usr/share/postgresql/9.5/contrib/postgis-2.2/spatial_ref_sys.sql > /dev/null
 $POSTGRESQL_SINGLE $POSTGRESQL_DB <<< "ALTER TABLE spatial_ref_sys OWNER TO $POSTGRESQL_USER;" > /dev/null
 $POSTGRESQL_SINGLE $POSTGRESQL_DB <<< "ALTER TABLE geometry_columns OWNER TO $POSTGRESQL_USER;" > /dev/null
 

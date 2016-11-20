@@ -26,7 +26,7 @@ RUN apt-get -y update && apt-get -y install \
     python-minimal python-dev python-virtualenv \
     libevent-dev libpq-dev nginx-light \
     apache2 libapache2-mod-wsgi \
-    postfix libxml2-dev libxslt1-dev libgeos-c1 \
+    postfix libxml2-dev libxslt1-dev libgeos-c1v5 \
     build-essential git wget curl
 
 # Install CKAN

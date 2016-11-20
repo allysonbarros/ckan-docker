@@ -1,38 +1,38 @@
 # installation /build-process
 
-## eccenca/ckan
+## allysonbarros/ckan
 ```
-git clone --recursive https://github.com/eccenca/ckan-docker.git
+git clone --recursive https://github.com/allysonbarros/ckan-docker.git
 cd ckan-docker
-docker build -t eccenca/ckan:latest .
+docker build -t allysonbarros/ckan:latest .
 ```
 
-### eccenca/ckan-solr
+### allysonbarros/ckan-solr
 ```
-cd ckan-docker/contrib/docker/solr
-docker build -t eccenca/ckan-solr:latest .
+cd contrib/docker/solr
+docker build -t allysonbarros/ckan-solr:latest .
 ```
 
-### eccenca/ckan-postgresql
+### allysonbarros/ckan-postgresql
 ```
-cd ckan-docker/contrib/docker/postgresql
-docker build -t eccenca/ckan-postgresql:latest .
+cd contrib/docker/postgresql
+docker build -t allysonbarros/ckan-postgresql:latest .
 ```
 
 # run ckan
 ## solr
 ```
-docker run -d --name ckan_solr eccenca/ckan-solr:latest
+docker run -d --name ckan_solr allysonbarros/ckan-solr:latest
 ```
 
 ## postgresql
 ```
-docker run -d --name ckan_db eccenca/ckan-postgresql:latest
+docker run -d --name ckan_db allysonbarros/ckan-postgresql:latest
 ```
 
 ## ckan
 ```
-docker run -it --rm --link ckan_solr:solr --link ckan_db:db -p 80:80  --name ckan_ckan eccenca/ckan:latest /bin/bash
+docker run -it --rm --link ckan_solr:solr --link ckan_db:db -p 80:80  --name ckan_ckan allysonbarros/ckan:latest /bin/bash
 ```
 within the container:
 ```
@@ -41,7 +41,7 @@ within the container:
 
 or with
 ```
-docker run -it --rm --link ckan_solr:solr --link ckan_db:db -p 80:80  --name ckan_ckan eccenca/ckan:latest
+docker run -it --rm --link ckan_solr:solr --link ckan_db:db -p 80:80  --name ckan_ckan allysonbarros/ckan:latest
 ```
 
 ### ckan configuration
