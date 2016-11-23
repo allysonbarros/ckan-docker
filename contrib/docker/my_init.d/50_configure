@@ -1,61 +1,12 @@
 #!/bin/sh
 
-# URL for solr (required unless linked to a container called 'solr')
-: ${SOLR_URL:=}
-
 # URL for the primary database, in the format expected by sqlalchemy (required
 # unless linked to a container called 'db')
 : ${DATABASE_URL:=}
-
-set -e
-
-# General settings
-CKAN_SITE_URL=${CKAN_SITE_URL:-http://localhost}
-CKAN_DEBUG=${CKAN_DEBUG:-False}
-CKAN_PLUGINS=${CKAN_PLUGINS:-}
-# Default Postgres' full-text search index language
-DB_FT_SEARCH_LANG=${DB_FT_SEARCH_LANG:-english}
-## Internationalisation Settings
-CKAN_LOCALE=${CKAN_LOCALE:-en}
-CKAN_LOCALES_OFFERED=${CKAN_LOCALES_OFFERED:-}
-## Feeds Settings
-CKAN_FEED_AUTHORITY=${CKAN_FEED_AUTHORITY:-}
-CKAN_FEED_DATE=${CKAN_FEED_DATE:-}
-CKAN_FEED_AUTHOR=${CKAN_FEED_AUTHOR:-}
-CKAN_FEED_AUTHOR_LINK=${CKAN_FEED_AUTHOR_LINK:-}
-##storage settings
-CKAN_STORAGE_PATH=${CKAN_DATA:-/var/lib/ckan}
-CKAN_MAX_FILE_SIZE=${CKAN_MAX_FILE_SIZE:-10}
-CKAN_MAX_IMAGE_SIZE=${CKAN_MAX_IMAGE_SIZE:-2}
-##spatial-ext
-CKAN_SPATIAL_SEARCH_BACKEND=${CKAN_SPATIAL_SEARCH_BACKEND:-solr}
-##activity stream
-CKAN_ACTIVITY_STREAM_ENABLED=${CKAN_ACTIVITY_STREAM_ENABLED:-True}
-
-
+# URL for solr (required unless linked to a container called 'solr')
+: ${SOLR_URL:=}
 # Email to which errors should be sent (optional, default: none)
-EMAIL_TO=${EMAIL_TO:-ckan-admin@localhost}
-EMAIL_FROM=${EMAIL_FROM:-ckan_instance@localhost}
-EMAIL_SMTP_SERVER=${EMAIL_SMTP_SERVER:-smtp.localhost}
-EMAIL_SMTP_STARTTLS=${EMAIL_SMTP_STARTTLS:-True}
-EMAIL_SMTP_USER=${EMAIL_SMTP_USER:-EXAMPLEUSER}
-EMAIL_SMTP_PASS=${EMAIL_SMTP_PASS:-EXAMPLEPASS}
-EMAIL_SMTP_EMAIL_FROM=${EMAIL_SMTP_EMAIL_FROM:-ckan_instance@localhost}
-ADDITIONAL_LICENCES=${ADDITIONAL_LICENCES:-}
-
-# ckanext-sparql config
-CKANEXT_SPARQL_ENDPOINT_URL=${CKANEXT_SPARQL_ENDPOINT_URL:-http://dbpedia.org/sparql}
-CKANEXT_SPARQL_HIDE_ENDPOINT_URL=${CKANEXT_SPARQL_HIDE_ENDPOINT_URL:-False}
-
-# ckanext-leipzigtheme config
-CKANEXT_LE_DATAPROXY_URL=${CKANEXT_LE_DATAPROXY_URL:-//jsonpdataproxy.appspot.com}
-
-# ckanext-harvest backend config
-CKANEXT_HARVEST_BACKEND=${CKANEXT_HARVEST_BACKEND:-}
-
-# ckanext-spatial config
-CKANEXT_SPATIAL_VALIDATOR_PROFILE=${CKANEXT_SPATIAL_VALIDATOR_PROFILE:-}
-CKANEXT_SPATIAL_HARVEST_CONTINUE_ON_VALIDATION_ERRORS=${CKANEXT_SPATIAL_HARVEST_CONTINUE_ON_VALIDATION_ERRORS:-False}
+: ${ERROR_EMAIL:=}
 
 set -eu
 
@@ -66,113 +17,26 @@ abort () {
   exit 1
 }
 
-write_postfix_main_cf () {
-  echo "relayhost = [${EMAIL_SMTP_SERVER}]:25" >> /etc/postfix/main.cf
-}
-
 write_config () {
-  # create log path and file
-  mkdir -p /var/log/ckan
-  touch /var/log/ckan/ckan_ext.log
-  chmod 777 /var/log/ckan/ckan_ext.log
-
   "$CKAN_HOME"/bin/paster make-config ckan "$CONFIG"
 
-  # set general settings
-  sed -i -e "s&^debug =.*&debug = ${CKAN_DEBUG}&" "$CONFIG"
-  sed -i -e "s&^ckan\.site_url =.*&ckan\.site_url = ${CKAN_SITE_URL}&" "$CONFIG"
-  sed -i -e "s&^ckan\.locale_default =.*&ckan\.locale_default = ${CKAN_LOCALE}&" "$CONFIG"
-  sed -i -e "s&^ckan\.locales_offered =.*&ckan\.locales_offered = ${CKAN_LOCALES_OFFERED}&" "$CONFIG"
-  sed -i -r -e "s/^(ckan\.plugins.*)/\1 $CKAN_PLUGINS/" "$CONFIG"
-  sed -i -e "s&^#licenses_group_url =.*&licenses_group_url = ${ADDITIONAL_LICENCES}&" "$CONFIG"
+  "$CKAN_HOME"/bin/paster --plugin=ckan config-tool "$CONFIG" -e \
+      "sqlalchemy.url = ${DATABASE_URL}" \
+      "solr_url = ${SOLR_URL}" \
+      "ckan.storage_path = /var/lib/ckan" \
+      "email_to = disabled@example.com" \
+      "error_email_from = ckan@$(hostname -f)" \
+      "ckan.site_url = http://192.168.0.6"
 
-  ##feeds settings
-  sed -i -e "s&^ckan\.feed\.authority_name =.*&ckan\.feed\.authority_name = ${CKAN_FEED_AUTHORITY}&" "$CONFIG"
-  sed -i -e "s&^ckan\.feed\.date =.*&ckan\.feed\.date = ${CKAN_FEED_DATE}&" "$CONFIG"
-  sed -i -e "s&^ckan\.feed\.author_name =.*&ckan\.feed\.author_name = ${CKAN_FEED_AUTHOR}&" "$CONFIG"
-  sed -i -e "s&^ckan\.feed\.author_link =.*&ckan\.feed\.author_link = ${CKAN_FEED_AUTHOR_LINK}&" "$CONFIG"
-
-  #storage settings
-  sed -i -e "s&^#ckan\.storage_path =.*&ckan\.storage_path = ${CKAN_STORAGE_PATH}&" "$CONFIG"
-  sed -i -e "s&^#ckan\.max_resource_size =.*&ckan\.max_resource_size = ${CKAN_MAX_FILE_SIZE}&" "$CONFIG"
-  sed -i -e "s&^#ckan\.max_image_size =.*&ckan\.max_image_size = ${CKAN_MAX_IMAGE_SIZE}&" "$CONFIG"
-
-  # activity stream config
-  sed -i -e "s&^#ckan.activity_streams_enabled =.*&ckan.activity_streams_enabled = ${CKAN_ACTIVITY_STREAM_ENABLED}&" "$CONFIG"
-
-  #add email config
-  sed -i -e "s&^email_to =.*&email_to = ${EMAIL_TO}&" "$CONFIG"
-  sed -i -e "s&^error_email_from =.*&error_email_from = ${EMAIL_FROM}&" "$CONFIG"
-
-  sed -i -e "s&^smtp\.server =.*&smtp\.server = ${EMAIL_SMTP_SERVER}&" "$CONFIG"
-  sed -i -e "s&^smtp\.starttls =.*&smtp\.starttls = ${EMAIL_SMTP_STARTTLS}&" "$CONFIG"
-  sed -i -e "s&^#smtp\.user =.*&smtp\.user = ${EMAIL_SMTP_USER}&" "$CONFIG"
-  sed -i -e "s&^#smtp\.password =.*&smtp\.password = ${EMAIL_SMTP_PASS}&" "$CONFIG"
-  sed -i -e "s&^#smtp\.mail_from =.*&smtp\.mail_from = ${EMAIL_SMTP_EMAIL_FROM}&" "$CONFIG"
-
-  #set database params
-  sed -i -e "s&^sqlalchemy\.url =.*&sqlalchemy\.url = ${DATABASE_URL}&" "$CONFIG"
-
-  #set solr params
-  #SOLR_URL=$(link_solr_url)
-  sed -i -e "s&^#solr_url =.*&solr_url = ${SOLR_URL}&" "$CONFIG"
-  ## Default Postgres' full-text search index language
-  sed -i -e "s&^ckan\.datastore\.default_fts_lang =.*&ckan\.datastore\.default_fts_lang = ${DB_FT_SEARCH_LANG}&" "$CONFIG"
-
-  ## Authorization Settings
-  sed -i -e "s&^ckan\.auth\.anon_create_dataset =.*&ckan\.auth\.anon_create_dataset = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.create_unowned_dataset =.*&ckan\.auth\.create_unowned_dataset = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.create_dataset_if_not_in_organization =.*&ckan\.auth\.create_dataset_if_not_in_organization = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.user_create_groups =.*&ckan\.auth\.user_create_groups = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.user_create_organizations =.*&ckan\.auth\.user_create_organizations = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.user_delete_groups =.*&ckan\.auth\.user_delete_groups = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.user_delete_organizations =.*&ckan\.auth\.user_delete_organizations = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.create_user_via_api =.*&ckan\.auth\.create_user_via_api = false&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.create_user_via_web =.*&ckan\.auth\.create_user_via_web = true&" "$CONFIG"
-  sed -i -e "s&^ckan\.auth\.roles_that_cascade_to_sub_groups =.*&ckan\.auth\.roles_that_cascade_to_sub_groups = admin&" "$CONFIG"
-
-  ## put ckanext-sparql param befor logging
-  sed -i -e "s&^## Logging configuration&# ckanext-sparql config parameter\nckanext.sparql.endpoint_url = ${CKANEXT_SPARQL_ENDPOINT_URL}\nckanext.sparql.hide_endpoint_url = ${CKANEXT_SPARQL_HIDE_ENDPOINT_URL}\n\n## Logging configuration&" "$CONFIG"
-
-  ## put ckanext-leipzigtheme param befor logging
-  sed -i -e "s&^## Logging configuration&# ckanext-leipzigtheme dataproxy config parameter\nckanext.leipzigtheme.dataproxy_url = ${CKANEXT_LE_DATAPROXY_URL}\n\n## Logging configuration&" "$CONFIG"
-
-  sed -i -e "s&^## ckanext-spatial configuration&# ckanext.spatial.search_backend config parameter\nckanext.spatial.search_backend = ${CKAN_SPATIAL_SEARCH_BACKEND}\n&" "$CONFIG"
-
-  ## add redis harvester config to ckan.ini:
-  if [ ! -z "$DATABASE_URL" ]; then
-  	sed -i -e "s&^## Logging configuration&# ckanext-harvest harvest backend config\nckan.harvest.mq.type = ${CKANEXT_HARVEST_BACKEND}\n\n## Logging configuration&" "$CONFIG"
+  if [ -n "$ERROR_EMAIL" ]; then
+    sed -i -e "s&^#email_to.*&email_to = ${ERROR_EMAIL}&" "$CONFIG"
   fi
-
-  ## add custom validators for ckanext-spatial:
-  if [ ! -z "$CKANEXT_SPATIAL_VALIDATOR_PROFILE" ]; then
-    sed -i -e "s&^## Logging configuration&# # ckanext-spatial harvest validation config\nckan.spatial.validator.profiles = ${CKANEXT_SPATIAL_VALIDATOR_PROFILE}\n\n## Logging configuration&" "$CONFIG"
-  fi
-
-  ## set mode for validation in ckanext-spatial:
-  if [ ! -z "$CKANEXT_SPATIAL_HARVEST_CONTINUE_ON_VALIDATION_ERRORS" ]; then
-        sed -i -e "s&^## Logging configuration&# ckanext-spatial harvest validation config\nckanext.spatial.harvest.continue_on_validation_errors = ${CKANEXT_SPATIAL_HARVEST_CONTINUE_ON_VALIDATION_ERRORS}\n\n## Logging configuration&" "$CONFIG"
-  fi
-
-  echo "
-[handler_file]
-class = FileHandler
-args = (\"/var/log/ckan/ckan_ext.log\", \"a\",)
-level = DEBUG
-formatter = generic" >> "$CONFIG"
-
-  sed -i -r -e 's/^(handlers = console.*)/\1, file/' "$CONFIG"
-  sed -i -r -e 's/^(keys = console*)/\1, file/' "$CONFIG"
-
-  #if [ -n "$ERROR_EMAIL" ]; then
-  #  sed -i -e "s&^#email_to.*&email_to = ${ERROR_EMAIL}&" "$CONFIG"
-  #fi
 }
 
 link_postgres_url () {
-  local user=$DB_ENV_POSTGRESQL_USER
-  local pass=$DB_ENV_POSTGRESQL_USER
-  local db=$DB_ENV_POSTGRESQL_DB
+  local user=$DB_ENV_POSTGRES_USER
+  local pass=$DB_ENV_POSTGRES_PASSWORD
+  local db=$DB_ENV_POSTGRES_DB
   local host=$DB_PORT_5432_TCP_ADDR
   local port=$DB_PORT_5432_TCP_PORT
   echo "postgresql://${user}:${pass}@${host}:${port}/${db}"
@@ -197,5 +61,4 @@ if [ ! -e "$CONFIG" ]; then
     fi
   fi
   write_config
-  write_postfix_main_cf
 fi

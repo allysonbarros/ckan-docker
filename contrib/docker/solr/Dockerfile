@@ -1,36 +1,28 @@
-####
-#
-# Dockerfile for building a Apache Solr;
-#
-# with scope to ckan
-#
-####
-FROM phusion/baseimage
+FROM solr:6.2
 MAINTAINER Allyson Barros <allysonbarrosrn@gmail.com>
 
-#set env
-ENV DEBIAN_FRONTEND noninteractive
+# Enviroment
+ENV SOLR_CORE ckan
 
-# Install Java
-RUN apt-get -q -y update && \
-    apt-get -q -y install default-jre-headless
+# User
+USER root
 
-# Install Solr
-ENV SOLR_HOME /opt/solr/example/solr
-ENV SOLR_VERSION 4.10.4
-ENV SOLR solr-$SOLR_VERSION
-ENV CKAN_VERSION 2.6.0
+# Create Directories
+RUN mkdir -p /opt/solr/server/solr/$SOLR_CORE/conf
+RUN mkdir -p /opt/solr/server/solr/$SOLR_CORE/data
 
-RUN mkdir -p /opt/solr
-ADD https://archive.apache.org/dist/lucene/solr/$SOLR_VERSION/$SOLR.tgz /opt/$SOLR.tgz
-RUN tar zxf /opt/$SOLR.tgz -C /opt/solr --strip-components 1
+# Adding Files
+ADD ./solrconfig.xml \
+https://raw.githubusercontent.com/ckan/ckan/ckan-2.6.0/ckan/config/solr/schema.xml \
+https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.0.0/solr/server/solr/configsets/basic_configs/conf/currency.xml \
+https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.0.0/solr/server/solr/configsets/basic_configs/conf/synonyms.txt \
+https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.0.0/solr/server/solr/configsets/basic_configs/conf/stopwords.txt \
+https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.0.0/solr/server/solr/configsets/basic_configs/conf/protwords.txt \
+https://raw.githubusercontent.com/apache/lucene-solr/releases/lucene-solr/6.0.0/solr/server/solr/configsets/data_driven_schema_configs/conf/elevate.xml \
+/opt/solr/server/solr/$SOLR_CORE/conf/
 
-# Install CKAN Solr core
-RUN cp -R $SOLR_HOME/collection1/ $SOLR_HOME/ckan/
-RUN echo name=ckan > $SOLR_HOME/ckan/core.properties
-#ADD schema.xml $SOLR_HOME/ckan/conf/schema.xml
-ADD https://github.com/ckan/ckan/raw/ckan-$CKAN_VERSION/ckan/config/solr/schema.xml $SOLR_HOME/ckan/conf/schema.xml
+# Create Core.properties
+RUN echo name=$SOLR_CORE > /opt/solr/server/solr/$SOLR_CORE/core.properties
 
-EXPOSE 8983
-WORKDIR /opt/solr/example
-CMD ["java", "-jar", "start.jar"]
+# Giving ownership to Solr
+RUN chown -R $SOLR_USER:$SOLR_USER /opt/solr/server/solr/$SOLR_CORE

@@ -1,10 +1,3 @@
-####
-#
-# Dockerfile for building a ckan;
-#
-# with scope to ckan
-#
-####
 FROM phusion/baseimage
 MAINTAINER Allyson Barros <allysonbarrosrn@gmail.com>
 
@@ -17,17 +10,26 @@ ENV HOME /root
 ENV CKAN_HOME /usr/lib/ckan/default
 ENV CKAN_CONFIG /etc/ckan/default
 ENV CKAN_DATA /var/lib/ckan
-ENV CONFIG ${CKAN_CONFIG}/ckan.ini
-ENV CKAN_MAX_FILE_SIZE 10
-ENV CKAN_MAX_IMAGE_SIZE 2
 
 # Install required packages
-RUN apt-get -y update && apt-get -y install \
-    python-minimal python-dev python-virtualenv \
-    libevent-dev libpq-dev nginx-light \
-    apache2 libapache2-mod-wsgi \
-    postfix libxml2-dev libxslt1-dev libgeos-c1v5 \
-    build-essential git wget curl
+RUN apt-get -q -y update && \
+    DEBIAN_FRONTEND=noninteractive apt-get -q -y install \
+        python-minimal \
+        python-dev \
+        python-virtualenv \
+        libevent-dev \
+        libpq-dev \
+        nginx-light \
+        apache2 \
+        libapache2-mod-wsgi \
+        postfix \
+        build-essential && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Add wait-for-it.sh
+ADD https://raw.githubusercontent.com/vishnubob/wait-for-it/master/wait-for-it.sh  /wait-for-it.sh
+RUN chmod +x /wait-for-it.sh
 
 # Install CKAN
 RUN virtualenv $CKAN_HOME
@@ -59,7 +61,9 @@ ADD ./contrib/docker/my_init.d /etc/my_init.d
 ADD ./contrib/docker/svc /etc/service
 CMD ["/sbin/my_init"]
 
+# Volumes
+VOLUME ["/etc/ckan/default"]
 VOLUME ["/var/lib/ckan"]
 EXPOSE 80
 
-RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN rm -rf /tmp/* /var/tmp/*
