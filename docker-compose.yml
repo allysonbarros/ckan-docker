@@ -1,0 +1,20 @@
+version: '2'
+services:
+  ckan:
+    container_name: ckan
+    image: allysonbarros/ckan:latest
+    depends_on:
+      - db
+      - solr
+    links:
+       - db
+       - solr
+    ports:
+       - "80:80"
+    entrypoint: /bin/bash
+  db:
+    container_name: db
+    image: allysonbarros/postgresql:latest
+  solr:
+    container_name: solr
+    image: allysonbarros/solr:latest
