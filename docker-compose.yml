@@ -2,7 +2,7 @@ version: '2'
 services:
   ckan:
     container_name: ckan
-    image: allysonbarros/ckan:latest
+    build: .
     depends_on:
       - db
       - solr
@@ -11,10 +11,13 @@ services:
        - solr
     ports:
        - "80:80"
-    entrypoint: /bin/bash
+    environment:
+      POSTGRES_USER: "ckan"
+      POSTGRES_PASSWORD: "ckan"
+      POSTGRES_DB: "ckan"
   db:
     container_name: db
-    image: allysonbarros/postgresql:latest
+    build: contrib/docker/postgresql
   solr:
     container_name: solr
-    image: allysonbarros/solr:latest
+    build: contrib/docker/solr
